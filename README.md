@@ -17,8 +17,6 @@ A simple AI-powered micro-app that generates a personalized daily cooking plan b
 
 👉 [https://arnav7777.github.io/cooktodo](https://arnav7777.github.io/cooktodo)
 
-> You'll need your own [Anthropic API key](https://console.anthropic.com) to use the app. Your key stays in your browser only — never stored or shared.
-
 ## 🛠 Tech Stack
 
 - Vanilla HTML, CSS, JavaScript — zero dependencies, zero frameworks
@@ -39,12 +37,6 @@ git clone https://github.com/arnav7777/cooktodo.git
 cd cooktodo
 # Open index.html in your browser — no build step needed
 ```
-
-## 🔑 API Key
-
-This app calls the Anthropic API directly from the browser. Enter your API key in the input field on the app — it is never sent anywhere except Anthropic's servers.
-
-Get your key at [console.anthropic.com](https://console.anthropic.com)
 
 ## 📋 PromptWars Challenge
 
