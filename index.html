@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Cooking To-Do Planner — PromptWars</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff; --bg2: #f5f5f4; --bg3: #e8e7e3;
+      --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
+      --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.2);
+      --green-fill: #EAF3DE; --green-text: #27500A; --green-bar: #3B6D11;
+      --amber-fill: #FAEEDA; --amber-text: #633806; --amber-bar: #BA7517;
+      --red-fill: #FCEBEB; --red-text: #791F1F; --red-bar: #A32D2D;
+      --radius-md: 8px; --radius-lg: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1c; --bg2: #2a2a27; --bg3: #333330;
+        --text: #f0ede8; --text2: #b4b2a9; --text3: #888780;
+        --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
+        --green-fill: #173404; --green-text: #C0DD97;
+        --amber-fill: #412402; --amber-text: #FAC775;
+        --red-fill: #501313; --red-text: #F7C1C1;
+      }
+    }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; display: flex; justify-content: center; padding: 2rem 1rem; }
+    .app { width: 100%; max-width: 680px; }
+    .header { margin-bottom: 1.5rem; }
+    .header h1 { font-size: 22px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .header p { font-size: 14px; color: var(--text2); margin-top: 4px; }
+    .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-field { display: flex; flex-direction: column; gap: 6px; }
+    .form-field label { font-size: 13px; color: var(--text2); font-weight: 500; }
+    .form-field input, .form-field select, .form-field textarea {
+      font-size: 14px; background: var(--bg); color: var(--text);
+      border: 0.5px solid var(--border2); border-radius: var(--radius-md);
+      padding: 8px 10px; font-family: inherit; width: 100%;
+    }
+    .form-field textarea { resize: vertical; min-height: 70px; }
+    .full-width { grid-column: 1 / -1; }
+    .generate-btn {
+      width: 100%; padding: 10px; font-size: 15px; font-weight: 500;
+      background: var(--bg); color: var(--text);
+      border: 0.5px solid var(--border2); border-radius: var(--radius-md);
+      cursor: pointer; margin-top: 4px; display: flex; align-items: center;
+      justify-content: center; gap: 8px; font-family: inherit;
+    }
+    .generate-btn:hover { background: var(--bg2); }
+    .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .result-section { margin-bottom: 1.25rem; }
+    .result-section:last-child { margin-bottom: 0; }
+    .section-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .meal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .meal-card { background: var(--bg2); border-radius: var(--radius-md); padding: 10px; }
+    .meal-label { font-size: 11px; color: var(--text3); font-weight: 500; margin-bottom: 3px; }
+    .meal-name { font-size: 13px; color: var(--text); font-weight: 500; }
+    .meal-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .grocery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .grocery-item { font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+    .sub-row { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text); padding: 5px 0; border-bottom: 0.5px solid var(--border); }
+    .sub-row:last-child { border-bottom: none; }
+    .sub-original { color: var(--text2); text-decoration: line-through; min-width: 80px; }
+    .budget-bar-wrap { background: var(--bg2); border-radius: 6px; height: 8px; margin: 8px 0; }
+    .budget-bar { height: 8px; border-radius: 6px; background: var(--green-bar); transition: width 0.5s; }
+    .budget-bar.warn { background: var(--amber-bar); }
+    .budget-bar.over { background: var(--red-bar); }
+    .budget-info { display: flex; justify-content: space-between; font-size: 13px; }
+    .feasibility-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 10px; border-radius: var(--radius-md); margin-left: 6px; }
+    .feasibility-badge.ok { background: var(--green-fill); color: var(--green-text); }
+    .feasibility-badge.warn { background: var(--amber-fill); color: var(--amber-text); }
+    .feasibility-badge.over { background: var(--red-fill); color: var(--red-text); }
+    .tips { font-size: 12px; color: var(--text2); margin-top: 8px; padding: 8px 10px; background: var(--bg2); border-radius: var(--radius-md); }
+    .loading { display: flex; align-items: center; gap: 10px; padding: 1.5rem; color: var(--text2); font-size: 14px; }
+    .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--text2); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-msg { color: var(--red-text); font-size: 13px; padding: 10px; background: var(--red-fill); border-radius: var(--radius-md); margin-top: 8px; }
+    .budget-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; text-align: center; }
+    .budget-breakdown .bd-label { font-size: 11px; color: var(--text3); }
+    .budget-breakdown .bd-val { font-size: 13px; font-weight: 500; color: var(--text); }
+    @media (max-width: 480px) {
+      .meal-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1><i class="ti ti-chef-hat"></i> AI Cooking To-Do Planner</h1>
+    <p>Tell us about your day — get a meal plan, grocery list, substitutions & budget check</p>
+  </div>
+
+  <div class="card">
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="people">People</label>
+        <input type="number" id="people" value="2" min="1" max="10" />
+      </div>
+      <div class="form-field">
+        <label for="budget">Budget (₹)</label>
+        <input type="number" id="budget" value="500" min="50" />
+      </div>
+      <div class="form-field full-width">
+        <label for="prefs">Dietary preferences / restrictions</label>
+        <input type="text" id="prefs" placeholder="e.g. vegetarian, no dairy, low carb..." />
+      </div>
+      <div class="form-field full-width">
+        <label for="day">Describe your day</label>
+        <textarea id="day" placeholder="e.g. busy work day, gym in the morning, dinner with family, craving something light..."></textarea>
+      </div>
+      <div class="form-field full-width">
+        <label for="pantry">What's in your pantry? (optional)</label>
+        <input type="text" id="pantry" placeholder="e.g. rice, dal, onions, tomatoes, eggs..." />
+      </div>
+    </div>
+    <button class="generate-btn" id="genBtn" onclick="generate()">
+      <i class="ti ti-sparkles"></i> Generate my meal plan
+    </button>
+    <div id="errorMsg"></div>
+  </div>
+
+  <div id="output"></div>
+</div>
+
+<script>
+  const ANTHROPIC_API_KEY = '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';
+
+  async function generate() {
+    const people = document.getElementById('people').value;
+    const budget = document.getElementById('budget').value;
+    const prefs = document.getElementById('prefs').value || 'none';
+    const day = document.getElementById('day').value || 'normal day';
+    const pantry = document.getElementById('pantry').value || 'standard pantry items';
+
+    const btn = document.getElementById('genBtn');
+    const output = document.getElementById('output');
+    const errDiv = document.getElementById('errorMsg');
+    errDiv.innerHTML = '';
+    btn.disabled = true;
+    output.innerHTML = '<div class="card loading"><div class="spinner"></div>Planning your meals...</div>';
+
+    const prompt = `You are a smart cooking assistant. Based on the user's input, generate a personalized cooking to-do list.
+
+User inputs:
+- Number of people: ${people}
+- Daily budget: ₹${budget}
+- Dietary preferences/restrictions: ${prefs}
+- Day description: ${day}
+- Pantry available: ${pantry}
+
+Respond ONLY with a valid JSON object (no markdown, no backticks, no explanation) with this exact structure:
+{
+  "meals": {
+    "breakfast": {"name": "...", "prep_time": "15 min", "cook_time": "10 min", "calories": "~350 kcal"},
+    "lunch": {"name": "...", "prep_time": "20 min", "cook_time": "25 min", "calories": "~550 kcal"},
+    "dinner": {"name": "...", "prep_time": "15 min", "cook_time": "30 min", "calories": "~600 kcal"}
+  },
+  "grocery_list": ["item 1 (qty)", "item 2 (qty)", "item 3 (qty)", "item 4 (qty)", "item 5 (qty)", "item 6 (qty)"],
+  "substitutions": [
+    {"original": "...", "substitute": "...", "reason": "..."},
+    {"original": "...", "substitute": "...", "reason": "..."},
+    {"original": "...", "substitute": "...", "reason": "..."}
+  ],
+  "budget": {
+    "estimated_cost": 420,
+    "budget_limit": ${budget},
+    "feasibility": "within budget",
+    "notes": "brief note on cost-saving or splurge",
+    "breakdown": {"breakfast": 80, "lunch": 160, "dinner": 180}
+  },
+  "cooking_tips": "one practical tip for this specific day"
+}`;
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-calls': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await resp.json();
+      const raw = data.content.map(b => b.text || '').join('');
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const d = JSON.parse(clean);
+
+      const cost = d.budget.estimated_cost;
+      const lim = d.budget.budget_limit;
+      const pct = Math.min(Math.round((cost / lim) * 100), 100);
+      const barClass = pct >= 100 ? 'over' : pct >= 85 ? 'warn' : '';
+      const badgeClass = cost > lim ? 'over' : cost >= lim * 0.85 ? 'warn' : 'ok';
+      const badgeText = cost > lim ? 'Over budget' : cost >= lim * 0.85 ? 'Tight budget' : 'Within budget';
+      const badgeIcon = cost > lim ? 'ti-alert-circle' : cost >= lim * 0.85 ? 'ti-alert-triangle' : 'ti-circle-check';
+
+      output.innerHTML = `
+<div class="card">
+  <div class="result-section">
+    <div class="section-title"><i class="ti ti-calendar"></i> Meal plan</div>
+    <div class="meal-grid">
+      ${['breakfast','lunch','dinner'].map(m => `
+        <div class="meal-card">
+          <div class="meal-label">${m.charAt(0).toUpperCase()+m.slice(1)}</div>
+          <div class="meal-name">${d.meals[m].name}</div>
+          <div class="meal-detail">Prep ${d.meals[m].prep_time} · Cook ${d.meals[m].cook_time}</div>
+          <div class="meal-detail">${d.meals[m].calories}</div>
+        </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="result-section">
+    <div class="section-title"><i class="ti ti-shopping-cart"></i> Grocery list</div>
+    <div class="grocery-grid">
+      ${d.grocery_list.map(item => `<div class="grocery-item"><i class="ti ti-circle" style="font-size:8px"></i>${item}</div>`).join('')}
+    </div>
+  </div>
+
+  <div class="result-section">
+    <div class="section-title"><i class="ti ti-replace"></i> Smart substitutions</div>
+    ${d.substitutions.map(s => `
+      <div class="sub-row">
+        <span class="sub-original">${s.original}</span>
+        <span style="color:var(--text3)">→</span>
+        <span style="flex:1;font-weight:500">${s.substitute}</span>
+        <span style="font-size:11px;color:var(--text3)">${s.reason}</span>
+      </div>`).join('')}
+  </div>
+
+  <div class="result-section">
+    <div class="section-title">
+      <i class="ti ti-wallet"></i> Budget check
+      <span class="feasibility-badge ${badgeClass}"><i class="ti ${badgeIcon}"></i>${badgeText}</span>
+    </div>
+    <div class="budget-info">
+      <span>Estimated cost</span>
+      <span>₹${cost} / ₹${lim}</span>
+    </div>
+    <div class="budget-bar-wrap"><div class="budget-bar ${barClass}" style="width:${pct}%"></div></div>
+    <div class="budget-breakdown">
+      ${['breakfast','lunch','dinner'].map(m => `
+        <div>
+          <div class="bd-label">${m.charAt(0).toUpperCase()+m.slice(1)}</div>
+          <div class="bd-val">₹${d.budget.breakdown[m]}</div>
+        </div>`).join('')}
+    </div>
+    <div class="tips"><strong>Note:</strong> ${d.budget.notes}</div>
+  </div>
+
+  ${d.cooking_tips ? `<div class="tips"><strong>Tip for today:</strong> ${d.cooking_tips}</div>` : ''}
+</div>`;
+
+    } catch(e) {
+      output.innerHTML = '';
+      errDiv.innerHTML = `<div class="error-msg"><i class="ti ti-alert-circle"></i> Error: ${e.message}. Check your API key and try again.</div>`;
+    }
+    btn.disabled = false;
+  }
+</script>
+</body>
+</html>
